@@ -649,7 +649,7 @@ MinimizeButton.MouseButton1Click:Connect(
 
 
 
-            MinimizeButton.Text = "â€”"
+            MinimizeButton.Text = "—"
 
 
 
@@ -2085,7 +2085,7 @@ _G.LocalScriptButton(
 
 )
 
-_G.AddParagraph("Credits", "Script created by Conta Teste (Scripted and Design) ")
+_G.AddParagraph("Credits", "Script created by Kaguei (Scripted and Design) ")
 _G.AddParagraph("Update Log", "+ Bug Fixes")
 
 logToConsole("WELCOME", "Welcome to Console!", Color3.fromRGB(0, 255, 255))
