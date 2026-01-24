@@ -61,13 +61,21 @@ local function testRemote(remote)
             end
         end)
 
-        task.wait(0.15)
+      local found = false
 
-        local obj = workspace:FindFirstChild(name)
-        if obj then
-            obj:Destroy()
-            return true
-        end
+for _ = 1, 20 do
+    local obj = workspace:FindFirstChild(name)
+    if obj then
+        obj:Destroy()
+        found = true
+        break
+    end
+    task.wait(0.1)
+end
+
+if found then
+    return true
+end
     end
     return false
 end
@@ -94,7 +102,7 @@ task.spawn(function()
 end)
 
 local start = tick()
-while not finished and tick() - start < 5 do
+while not finished and tick() - start < 6 do
     task.wait(0.1)
 end
 
