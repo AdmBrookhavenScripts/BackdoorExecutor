@@ -723,7 +723,7 @@ TextBox.Size = UDim2.new(0.9, 0, 0.5, 0)
 
 
 
-TextBox.PlaceholderText = "Input code here"
+TextBox.PlaceholderText = "Input script a here"
 
 
 
