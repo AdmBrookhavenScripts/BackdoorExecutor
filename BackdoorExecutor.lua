@@ -1,12 +1,4 @@
---[[
-
-===============================================================================
-
-This script was made by Kaguei. If you modify it, please give me credit.
-
-===============================================================================
-
-]]
+local StarterGui = game:GetService("StarterGui")
 
 local function coreNotify(title, text)
         game:GetService("StarterGui"):SetCore("SendNotification", {
@@ -34,7 +26,7 @@ local SAFE_LOCATIONS = {
 		Teams = true,
 	}
 
-	local foundExploit = false
+	local backdoorFound = false
 	local remoteEvent, remoteFunction
 	local scanTime = 0
 	local timeToFindExploit = 0 
@@ -42,7 +34,7 @@ local SAFE_LOCATIONS = {
 	local ReplicatedStorage = game:GetService("ReplicatedStorage")
 	local StarterGui = game:GetService("StarterGui")
 
-	local function isLikelyBackdoorRemote(remote)
+	local function backdoorRemote(remote)
 		if SAFE_LOCATIONS[remote.Parent.ClassName] then return false end
 		if string.match(remote:GetFullName(), "^RobloxReplicatedStorage") then
 			return false
@@ -56,7 +48,7 @@ local SAFE_LOCATIONS = {
 	local activeTests = {}
 	local function setupGlobalDescendantListener()
 		ReplicatedStorage.DescendantAdded:Connect(function(inst)
-			if inst:IsA("Folder") and inst.Name:sub(1, 5) == "BackdoorExecutor_" then
+			if inst:IsA("Folder") and inst.Name:sub(1, 5) == "BackdoorExecutor" then
 				local testId = inst.Name
 				if activeTests[testId] then
 					activeTests[testId].found = true
@@ -68,10 +60,10 @@ local SAFE_LOCATIONS = {
 
 	local function testRemote(remote, isFunction)
 
-		if foundExploit then return false end
+		if backdoorFound then return false end
 
 
-		local testId = "BackdoorExecutor_" .. tostring(os.clock()):gsub("[^%d]", "")
+		local testId = "BackdoorExecutor" .. tostring(os.clock()):gsub("[^%d]", "")
 		local payload = string.format([[
 				local m = Instance.new("Folder")
 				m.Name = "%s"
@@ -100,7 +92,7 @@ local SAFE_LOCATIONS = {
 	end
 
 	local function simpleFindRemote()
-		foundExploit = false
+		backdoorFound = false
 		remoteEvent, remoteFunction = nil, nil
 		timeToFindExploit = 0 
 		local candidates = {}
@@ -108,7 +100,7 @@ local SAFE_LOCATIONS = {
 
 		for _, obj in ipairs(game:GetDescendants()) do
 			if (obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction")) then
-				if isLikelyBackdoorRemote(obj) then
+				if backdoorRemote(obj) then
 					table.insert(candidates, obj)
 				end
 			end
@@ -118,7 +110,7 @@ local SAFE_LOCATIONS = {
 		local activeTestIds = {}
 		if #candidates > 0 then
 			for _, remote in ipairs(candidates) do
-				if foundExploit then break end
+				if backdoorFound then break end
 				local testId = testRemote(remote, remote:IsA("RemoteFunction"))
 				if testId then
 					table.insert(activeTestIds, testId)
@@ -139,7 +131,7 @@ local SAFE_LOCATIONS = {
 
 					if testData and (testData.found or ReplicatedStorage:FindFirstChild(testId)) then
 						testData.found = true
-						foundExploit = true
+						backdoorFound = true
 						if testData.isFunction then
 							remoteFunction = testData.remote
 						else
@@ -154,12 +146,12 @@ local SAFE_LOCATIONS = {
 						break
 					end
 				end
-				if foundExploit then break end
+				if backdoorFound then break end
 			end
 		end
 
 		scanTime = os.clock() - initialScanStart
-		if not foundExploit then
+		if not backdoorFound then
 		else
 		end
 
@@ -179,7 +171,7 @@ local SAFE_LOCATIONS = {
 			simpleFindRemote()
 			local scanEnd = os.clock()
             
-			if foundExploit then
+			if backdoorFound then
 				StarterGui:SetCore("SendNotification", {
 					Title = "Backdoor Executor",
 					Text = "Backdoor found in " .. string.format("%.2f", timeToFindExploit) .. " s",
@@ -203,7 +195,7 @@ local function RunPayload(code)
 end
 
 task.wait(1)
-if foundExploit then
+if backdoorFound then
 	local Players = game:GetService("Players")
 
 
@@ -316,53 +308,25 @@ Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
 
 
 
-local FloatButton = Instance.new("ImageButton", ScreenGui)
-
-
+local FloatButton = Instance.new("TextButton", ScreenGui)
 
 FloatButton.Name = "FloatToggleButton"
-
-
-
 FloatButton.Size = UDim2.new(0, 50, 0, 50)
-
-
-
 FloatButton.Position = UDim2.new(1, -60, 0, 50)
-
-
-
 FloatButton.AnchorPoint = Vector2.new(1, 0)
-
-
-
 FloatButton.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-
-
-
 FloatButton.BackgroundTransparency = 0.3
-
-
-
 FloatButton.BorderSizePixel = 0
-
-
-
 FloatButton.AutoButtonColor = true
-
-
-
-FloatButton.Image = "rbxassetid://125137775540357"
-
-
-
 FloatButton.Active = true
-
-
-
 FloatButton.Draggable = true
 
-
+FloatButton.Text = "—"
+FloatButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+FloatButton.Font = Enum.Font.GothamBold
+FloatButton.TextScaled = true
+FloatButton.TextXAlignment = Enum.TextXAlignment.Center
+FloatButton.TextYAlignment = Enum.TextYAlignment.Center
 
 Instance.new("UICorner", FloatButton).CornerRadius = UDim.new(0, 8)
 
@@ -372,23 +336,18 @@ local menuVisible = true
 
 
 
-FloatButton.MouseButton1Click:Connect(
+FloatButton.MouseButton1Click:Connect(function()
+	menuVisible = not menuVisible
+	MainFrame.Visible = menuVisible
 
-    function()
+	if menuVisible then
+		FloatButton.Text = "—"
+	else
+		FloatButton.Text = "+"
+	end
 
-        menuVisible = not menuVisible
-
-
-
-        MainFrame.Visible = menuVisible
-
-
-
-        FireButtonClickSound()
-
-    end
-
-)
+	FireButtonClickSound()
+end)
 
 
 
@@ -951,7 +910,14 @@ local function logToConsole(prefix, text, color)
 
 
     label.Size = UDim2.new(1, -10, 0, 20)
-
+    
+    
+    
+    label.TextWrapped = true
+    
+    
+    
+    label.AutomaticSize = Enum.AutomaticSize.Y
 end
 
 
@@ -1094,10 +1060,6 @@ ClearLogsButton.MouseButton1Click:Connect(
 
 
 
-        coreNotify("Success", "Successfully Cleared")
-
-
-
         for _, obj in pairs(ConsolePanel:GetChildren()) do
 
             if obj:IsA("TextLabel") then
@@ -1125,7 +1087,7 @@ ExecuteButton.MouseButton1Click:Connect(function()
         return
     end
 
-    if not foundExploit then
+    if not backdoorFound then
         coreNotify("Error", "No backdoor found")
         logToConsole("ERROR", "No backdoor found", Color3.fromRGB(255, 100, 100))
         return
@@ -1155,10 +1117,6 @@ ClearButton.MouseButton1Click:Connect(
 
 
         TextBox.Text = ""
-
-
-
-        coreNotify("Success", "Successfully Cleared")
 
 
 
@@ -1510,11 +1468,28 @@ _G.AddButton = function(text, code)
 
         function()
 
-            SetActiveTab("executor")
+local bind = Instance.new("BindableFunction")
 
+bind.OnInvoke = function(buttonPressed)
+	if buttonPressed == "Execute" then
+	if backdoorFound then
+		RunPayload(code)
+		coreNotify("Backdoor Executor", "Script Executed")
+	end
+	elseif buttonPressed == "Open in editor" then
+		SetActiveTab("executor")
+        TextBox.Text = code
+	end
+end
 
-
-            TextBox.Text = code
+StarterGui:SetCore("SendNotification", {
+	Title = "Backdoor Executor",
+	Text = "Select an action",
+	Duration = 15,
+	Callback = bind,
+	Button1 = "Execute",
+	Button2 = "Open in editor"
+})
 
         end
 
@@ -1878,159 +1853,105 @@ _G.AddButton(
 "Dummy Spawn", 
 
 [[
+--=======================================
+-- Dummy Configs
+--=======================================
 
--- ============================
+local MAX_HEALTH = 100
+local CURRENT_HEALTH = 100
+local DummyName = "Dummy"
 
--- Dummy - Made by Conta Teste
-
--- ============================
-
-
-
--- Dummy Configurations:
-
-local h = 100 -- Max Health | Example: 100
-
-local i = 100 -- Current Health | Example: 50
-
-
-
--- Dummy Code:
+--=======================================
+-- Dummy Code
+--=======================================
 
 local Players = game:GetService("Players")
 
+local function createPart(name, size, color, parent)
+	local p = Instance.new("Part")
+	p.Name = name
+	p.Size = size
+	p.BrickColor = BrickColor.new(color)
+	p.Anchored = false
+	p.CanCollide = true
+	p.TopSurface = Enum.SurfaceType.Smooth
+	p.BottomSurface = Enum.SurfaceType.Smooth
+	p.Parent = parent
+	return p
+end
+
+local function weld(name, part0, part1, c0, c1)
+	local m = Instance.new("Motor6D")
+	m.Name = name
+	m.Part0 = part0
+	m.Part1 = part1
+	m.C0 = c0
+	m.C1 = c1
+	m.Parent = part0
+end
+
+local function createDummy(position)
+	local dummy = Instance.new("Model")
+	dummy.Name = DummyName
+	
+	local HumanoidRootPart = createPart(
+		"HumanoidRootPart",
+		Vector3.new(2, 2, 1),
+		"Really black",
+		dummy
+	)
+	HumanoidRootPart.Transparency = 1
+	HumanoidRootPart.CanCollide = false
+
+	local Torso = createPart("Torso", Vector3.new(2,2,1), "Medium stone grey", dummy)
+	local Head = createPart("Head", Vector3.new(2,1,1), "Medium stone grey", dummy)
+	local LeftArm = createPart("Left Arm", Vector3.new(1,2,1), "Medium stone grey", dummy)
+	local RightArm = createPart("Right Arm", Vector3.new(1,2,1), "Medium stone grey", dummy)
+	local LeftLeg = createPart("Left Leg", Vector3.new(1,2,1), "Medium stone grey", dummy)
+	local RightLeg = createPart("Right Leg", Vector3.new(1,2,1), "Medium stone grey", dummy)
+	
+	local mesh = Instance.new("SpecialMesh")
+	mesh.MeshType = Enum.MeshType.Head
+	mesh.Scale = Vector3.new(1.25, 1.25, 1.25)
+	mesh.Parent = Head
+
+	local face = Instance.new("Decal")
+	face.Texture = "rbxasset://textures/face.png"
+	face.Face = Enum.NormalId.Front
+	face.Parent = Head
+	
+	HumanoidRootPart.Position = position
+	Torso.Position = position
+	Head.Position = position + Vector3.new(0,1.5,0)
+	LeftArm.Position = position + Vector3.new(-1.5,0.5,0)
+	RightArm.Position = position + Vector3.new(1.5,0.5,0)
+	LeftLeg.Position = position + Vector3.new(-0.5,-1.5,0)
+	RightLeg.Position = position + Vector3.new(0.5,-1.5,0)
+
+	local humanoid = Instance.new("Humanoid")
+	humanoid.RigType = Enum.HumanoidRigType.R6
+	humanoid.MaxHealth = MAX_HEALTH
+	humanoid.Health = CURRENT_HEALTH
+	humanoid.Parent = dummy
+	
+	weld("RootJoint", HumanoidRootPart, Torso, CFrame.new(), CFrame.new())
+	weld("Neck", Torso, Head, CFrame.new(0,1,0), CFrame.new(0,-0.5,0))
+	weld("Left Shoulder", Torso, LeftArm, CFrame.new(-1,0.5,0), CFrame.new(0.5,0.5,0))
+	weld("Right Shoulder", Torso, RightArm, CFrame.new(1,0.5,0), CFrame.new(-0.5,0.5,0))
+	weld("Left Hip", Torso, LeftLeg, CFrame.new(-0.5,-1,0), CFrame.new(0,1,0))
+	weld("Right Hip", Torso, RightLeg, CFrame.new(0.5,-1,0), CFrame.new(0,1,0))
+
+	dummy.PrimaryPart = HumanoidRootPart
+	dummy.Parent = workspace
+end
+
 local player = Players:GetPlayers()[1]
-
-function a(g)
-
-local dummy = Instance.new("Model")
-
-dummy.Name = "Dummy"
-
-function d(c, e, f)
-
-local p = Instance.new("Part")
-
-p.Name = c
-
-p.Size = e
-
-p.BrickColor = BrickColor.new(f)
-
-p.Anchored = false
-
-p.CanCollide = true
-
-p.TopSurface = Enum.SurfaceType.Smooth
-
-p.BottomSurface = Enum.SurfaceType.Smooth
-
-p.Parent = dummy
-
-return p
-
+if player and player.Character then
+	local hrp = player.Character:FindFirstChild("HumanoidRootPart")
+	if hrp then
+		createDummy(hrp.Position + Vector3.new(5,0,0))
+	end
 end
-
-local Head = d("Head", Vector3.new(2, 1, 1), "Medium stone grey")
-
-local Torso = d("Torso", Vector3.new(2, 2, 1), "Medium stone grey")
-
-local LeftArm = d("Left Arm", Vector3.new(1, 2, 1), "Medium stone grey")
-
-local RightArm = d("Right Arm", Vector3.new(1, 2, 1), "Medium stone grey")
-
-local LeftLeg = d("Left Leg", Vector3.new(1, 2, 1), "Medium stone grey")
-
-local RightLeg = d("Right Leg", Vector3.new(1, 2, 1), "Medium stone grey")
-
-local headMesh = Instance.new("SpecialMesh")
-
-headMesh.MeshType = Enum.MeshType.Head
-
-headMesh.Scale = Vector3.new(1.25, 1.25, 1.25)
-
-headMesh.Parent = Head
-
-local face = Instance.new("Decal")
-
-face.Texture = "rbxasset://textures/face.png"
-
-face.Face = Enum.NormalId.Front
-
-face.Parent = Head
-
-Torso.Position = g
-
-Head.Position = g + Vector3.new(0, 1.5, 0)
-
-LeftArm.Position = g + Vector3.new(-1.5, 0.5, 0)
-
-RightArm.Position = g + Vector3.new(1.5, 0.5, 0)
-
-LeftLeg.Position = g + Vector3.new(-0.5, -1.5, 0)
-
-RightLeg.Position = g + Vector3.new(0.5, -1.5, 0)
-
-local humanoid = Instance.new("Humanoid")
-
-humanoid.Name = "Humanoid"
-
-humanoid.RigType = Enum.HumanoidRigType.R6
-
-humanoid.MaxHealth = h
-
-humanoid.Health = i
-
-humanoid.Parent = dummy
-
-function b(c, part0, part1, c0, c1)
-
-local motor = Instance.new("Motor6D")
-
-motor.Name = c
-
-motor.Part0 = part0
-
-motor.Part1 = part1
-
-motor.C0 = c0
-
-motor.C1 = c1
-
-motor.Parent = part0
-
-end
-
-b("Neck", Torso, Head, CFrame.new(0, 1, 0), CFrame.new(0, -0.5, 0))
-
-b("Left Shoulder", Torso, LeftArm, CFrame.new(-1, 0.5, 0), CFrame.new(0.5, 0.5, 0))
-
-b("Right Shoulder", Torso, RightArm, CFrame.new(1, 0.5, 0), CFrame.new(-0.5, 0.5, 0))
-
-b("Left Hip", Torso, LeftLeg, CFrame.new(-0.5, -1, 0), CFrame.new(0, 1, 0))
-
-b("Right Hip", Torso, RightLeg, CFrame.new(0.5, -1, 0), CFrame.new(0, 1, 0))
-
-dummy.PrimaryPart = Torso
-
-dummy.Parent = workspace
-
-end
-
-if not player then return end
-
-local char = player.Character
-
-if not char then return end
-
-local hrp = char:FindFirstChild("HumanoidRootPart")
-
-if not hrp then return end
-
-local pos = hrp.Position + Vector3.new(3, 0, 0)
-
-a(pos)
-
 ]]
 
 )
