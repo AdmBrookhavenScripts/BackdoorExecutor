@@ -1,3 +1,9 @@
+local CoreGui = game:GetService("CoreGui")
+
+if CoreGui:FindFirstChild("BackdoorExecutor") then
+    return
+end
+
 local StarterGui = game:GetService("StarterGui")
 
 local function coreNotify(title, text)
@@ -90,6 +96,14 @@ local SAFE_LOCATIONS = {
 
 		return testId
 	end
+	
+	local function RunPayload(code)
+	if remoteEvent then
+		remoteEvent:FireServer(code)
+	elseif remoteFunction then
+		remoteFunction:InvokeServer(code)
+	end
+end
 
 	local function simpleFindRemote()
 		backdoorFound = false
@@ -178,26 +192,7 @@ end
 					Text = "Backdoor found in " .. tostring(timeToFindExploit) .. "s",
 					Duration = 5,
 				})
-			else
-				StarterGui:SetCore("SendNotification", {
-					Title = "Backdoor Executor",
-					Text = "No backdoor found",
-					Duration = 5,
-				})
-			end
-		end)
-		
-local function RunPayload(code)
-	if remoteEvent then
-		remoteEvent:FireServer(code)
-	elseif remoteFunction then
-		remoteFunction:InvokeServer(code)
-	end
-end
-
-task.wait(1.5)
-if backdoorFound then
-	local Players = game:GetService("Players")
+					local Players = game:GetService("Players")
 
 
 
@@ -2169,7 +2164,7 @@ _G.LocalScriptButton(
 )
 
 _G.AddParagraph("Credits", "Script created by Kaguei (Scripted and Design) ")
-_G.AddParagraph("Update Log", "+ Bug Fixes")
+_G.AddParagraph("Update Log", "+ Improved scanner")
 
 logToConsole("WELCOME", "Welcome to Console!", Color3.fromRGB(0, 255, 255))
 
@@ -2180,4 +2175,11 @@ for _, obj in ipairs(ScreenGui:GetDescendants()) do
         obj.ScrollBarThickness = 0
     end
 end
-end
+else
+StarterGui:SetCore("SendNotification", {
+Title = "Backdoor Executor",
+Text = "No backdoor found",
+Duration = 5,
+})
+  end
+end)
