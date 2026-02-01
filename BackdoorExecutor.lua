@@ -254,7 +254,109 @@ local function FireButtonClickSound()
 
 end
 
+local function GenerateDummyCode(playerName)
+    return [[
+--=======================================
+-- Dummy Configs
+--=======================================
 
+local MAX_HEALTH = 100
+local CURRENT_HEALTH = 100
+local DummyName = "Dummy"
+
+--=======================================
+-- Dummy Code
+--=======================================
+
+local Players = game:GetService("Players")
+
+local function createPart(name, size, color, parent)
+    local p = Instance.new("Part")
+    p.Name = name
+    p.Size = size
+    p.BrickColor = BrickColor.new(color)
+    p.Anchored = false
+    p.CanCollide = true
+    p.TopSurface = Enum.SurfaceType.Smooth
+    p.BottomSurface = Enum.SurfaceType.Smooth
+    p.Parent = parent
+    return p
+end
+
+local function weld(name, part0, part1, c0, c1)
+    local m = Instance.new("Motor6D")
+    m.Name = name
+    m.Part0 = part0
+    m.Part1 = part1
+    m.C0 = c0
+    m.C1 = c1
+    m.Parent = part0
+end
+
+local function createDummy(position)
+    local dummy = Instance.new("Model")
+    dummy.Name = DummyName
+
+    local HumanoidRootPart = createPart(
+        "HumanoidRootPart",
+        Vector3.new(2, 2, 1),
+        "Really black",
+        dummy
+    )
+    HumanoidRootPart.Transparency = 1
+    HumanoidRootPart.CanCollide = false
+
+    local Torso = createPart("Torso", Vector3.new(2,2,1), "Medium stone grey", dummy)
+    local Head = createPart("Head", Vector3.new(2,1,1), "Medium stone grey", dummy)
+    local LeftArm = createPart("Left Arm", Vector3.new(1,2,1), "Medium stone grey", dummy)
+    local RightArm = createPart("Right Arm", Vector3.new(1,2,1), "Medium stone grey", dummy)
+    local LeftLeg = createPart("Left Leg", Vector3.new(1,2,1), "Medium stone grey", dummy)
+    local RightLeg = createPart("Right Leg", Vector3.new(1,2,1), "Medium stone grey", dummy)
+
+    local mesh = Instance.new("SpecialMesh")
+    mesh.MeshType = Enum.MeshType.Head
+    mesh.Scale = Vector3.new(1.25, 1.25, 1.25)
+    mesh.Parent = Head
+
+    local face = Instance.new("Decal")
+    face.Texture = "rbxasset://textures/face.png"
+    face.Face = Enum.NormalId.Front
+    face.Parent = Head
+
+    HumanoidRootPart.Position = position
+    Torso.Position = position
+    Head.Position = position + Vector3.new(0,1.5,0)
+    LeftArm.Position = position + Vector3.new(-1.5,0.5,0)
+    RightArm.Position = position + Vector3.new(1.5,0.5,0)
+    LeftLeg.Position = position + Vector3.new(-0.5,-1.5,0)
+    RightLeg.Position = position + Vector3.new(0.5,-1.5,0)
+
+    local humanoid = Instance.new("Humanoid")
+    humanoid.RigType = Enum.HumanoidRigType.R6
+    humanoid.MaxHealth = MAX_HEALTH
+    humanoid.Health = CURRENT_HEALTH
+    humanoid.Parent = dummy
+
+    weld("RootJoint", HumanoidRootPart, Torso, CFrame.new(), CFrame.new())
+    weld("Neck", Torso, Head, CFrame.new(0,1,0), CFrame.new(0,-0.5,0))
+    weld("Left Shoulder", Torso, LeftArm, CFrame.new(-1,0.5,0), CFrame.new(0.5,0.5,0))
+    weld("Right Shoulder", Torso, RightArm, CFrame.new(1,0.5,0), CFrame.new(-0.5,0.5,0))
+    weld("Left Hip", Torso, LeftLeg, CFrame.new(-0.5,-1,0), CFrame.new(0,1,0))
+    weld("Right Hip", Torso, RightLeg, CFrame.new(0.5,-1,0), CFrame.new(0,1,0))
+
+    dummy.PrimaryPart = HumanoidRootPart
+    dummy.Parent = workspace
+end
+
+local plr = Players:FindFirstChild("]] .. playerName .. [[")
+if plr and plr.Character then
+    local hrp = plr.Character:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        createDummy(hrp.Position + Vector3.new(5,0,0))
+    end
+end
+]]
+end
 
 local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
 
@@ -1921,112 +2023,10 @@ _G.AddButton(
 )
 
 
+
 _G.AddButton(
-
-"Dummy Spawn", 
-
-[[
---=======================================
--- Dummy Configs
---=======================================
-
-local MAX_HEALTH = 100
-local CURRENT_HEALTH = 100
-local DummyName = "Dummy"
-
---=======================================
--- Dummy Code
---=======================================
-
-local Players = game:GetService("Players")
-
-local function createPart(name, size, color, parent)
-	local p = Instance.new("Part")
-	p.Name = name
-	p.Size = size
-	p.BrickColor = BrickColor.new(color)
-	p.Anchored = false
-	p.CanCollide = true
-	p.TopSurface = Enum.SurfaceType.Smooth
-	p.BottomSurface = Enum.SurfaceType.Smooth
-	p.Parent = parent
-	return p
-end
-
-local function weld(name, part0, part1, c0, c1)
-	local m = Instance.new("Motor6D")
-	m.Name = name
-	m.Part0 = part0
-	m.Part1 = part1
-	m.C0 = c0
-	m.C1 = c1
-	m.Parent = part0
-end
-
-local function createDummy(position)
-	local dummy = Instance.new("Model")
-	dummy.Name = DummyName
-	
-	local HumanoidRootPart = createPart(
-		"HumanoidRootPart",
-		Vector3.new(2, 2, 1),
-		"Really black",
-		dummy
-	)
-	HumanoidRootPart.Transparency = 1
-	HumanoidRootPart.CanCollide = false
-
-	local Torso = createPart("Torso", Vector3.new(2,2,1), "Medium stone grey", dummy)
-	local Head = createPart("Head", Vector3.new(2,1,1), "Medium stone grey", dummy)
-	local LeftArm = createPart("Left Arm", Vector3.new(1,2,1), "Medium stone grey", dummy)
-	local RightArm = createPart("Right Arm", Vector3.new(1,2,1), "Medium stone grey", dummy)
-	local LeftLeg = createPart("Left Leg", Vector3.new(1,2,1), "Medium stone grey", dummy)
-	local RightLeg = createPart("Right Leg", Vector3.new(1,2,1), "Medium stone grey", dummy)
-	
-	local mesh = Instance.new("SpecialMesh")
-	mesh.MeshType = Enum.MeshType.Head
-	mesh.Scale = Vector3.new(1.25, 1.25, 1.25)
-	mesh.Parent = Head
-
-	local face = Instance.new("Decal")
-	face.Texture = "rbxasset://textures/face.png"
-	face.Face = Enum.NormalId.Front
-	face.Parent = Head
-	
-	HumanoidRootPart.Position = position
-	Torso.Position = position
-	Head.Position = position + Vector3.new(0,1.5,0)
-	LeftArm.Position = position + Vector3.new(-1.5,0.5,0)
-	RightArm.Position = position + Vector3.new(1.5,0.5,0)
-	LeftLeg.Position = position + Vector3.new(-0.5,-1.5,0)
-	RightLeg.Position = position + Vector3.new(0.5,-1.5,0)
-
-	local humanoid = Instance.new("Humanoid")
-	humanoid.RigType = Enum.HumanoidRigType.R6
-	humanoid.MaxHealth = MAX_HEALTH
-	humanoid.Health = CURRENT_HEALTH
-	humanoid.Parent = dummy
-	
-	weld("RootJoint", HumanoidRootPart, Torso, CFrame.new(), CFrame.new())
-	weld("Neck", Torso, Head, CFrame.new(0,1,0), CFrame.new(0,-0.5,0))
-	weld("Left Shoulder", Torso, LeftArm, CFrame.new(-1,0.5,0), CFrame.new(0.5,0.5,0))
-	weld("Right Shoulder", Torso, RightArm, CFrame.new(1,0.5,0), CFrame.new(-0.5,0.5,0))
-	weld("Left Hip", Torso, LeftLeg, CFrame.new(-0.5,-1,0), CFrame.new(0,1,0))
-	weld("Right Hip", Torso, RightLeg, CFrame.new(0.5,-1,0), CFrame.new(0,1,0))
-
-	dummy.PrimaryPart = HumanoidRootPart
-	dummy.Parent = workspace
-end
-
-local player = Players:GetPlayers()[1]
-if player and player.Character then
-	local hrp = player.Character:FindFirstChild("HumanoidRootPart")
-	if hrp then
-		createDummy(hrp.Position + Vector3.new(5,0,0))
-	end
-end
-]]
-
+    "Dummy Spawn",
+    GenerateDummyCode(LocalPlayer.Name)
 )
 
 
