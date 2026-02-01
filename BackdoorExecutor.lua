@@ -2043,32 +2043,6 @@ _G.AddButton("C4 Bomb", 'require(0x1767bf813)("' .. LocalPlayer.Name .. '")')
 
 
 
-_G.AddButton(
-
-    "Shutdown Server",
-
-    [[
-
-
-
-for _, v in pairs(game.Players:GetPlayers()) do
-
-
-
-v:Kick("Server has Shutdown")
-
-
-
-end
-
-
-
-]]
-
-)
-
-
-
 _G.AddButton("Grab Knife V4 (R6 Only)", 'require(18665717275).load("' .. LocalPlayer.Name .. '")')
 
 
